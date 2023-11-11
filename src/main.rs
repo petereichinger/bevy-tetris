@@ -2,26 +2,41 @@ mod setup;
 
 use bevy::ecs::query::QuerySingleError;
 use bevy::prelude::*;
+use setup::CellTextures;
+
+use crate::setup::GameState;
 
 fn main() {
     println!("{:?}", std::env::current_dir());
     App::new()
         .add_plugins((DefaultPlugins, setup::SetupPlugin))
         .insert_resource(StepTimer(Timer::from_seconds(1.0, TimerMode::Repeating)))
-        .add_systems(Update, drop_current_piece)
-        .add_systems(Startup, spawn_piece_if_necessary)
+        .add_systems(
+            Update,
+            drop_current_piece.run_if(in_state(GameState::InGame)),
+        )
+        .add_systems(OnEnter(GameState::InGame), spawn_piece_if_necessary)
         .run();
 }
 
-fn spawn_piece_if_necessary(mut commands: Commands, query: Query<&Piece>) {
+fn spawn_piece_if_necessary(
+    mut commands: Commands,
+    query: Query<&Piece>,
+    cell_textures: Res<CellTextures>,
+    texture_atlases: Res<Assets<TextureAtlas>>,
+) {
+    let texture_atlas = cell_textures.0.clone();
+    let sprite = TextureAtlasSprite {
+        color: Color::ORANGE_RED,
+        index: 1,
+        ..default()
+    };
     if let Err(QuerySingleError::NoEntities(_)) = query.get_single() {
         commands.spawn((
-            SpriteBundle {
-                transform: Transform {
-                    translation: Vec3::new(5.0, 12.0, 0.0),
-                    scale: Vec3::new(100.0, 50.0, 1.0),
-                    ..Default::default()
-                },
+            SpriteSheetBundle {
+                transform: Transform::from_xyz(5.0, 12.0, 0.0),
+                sprite,
+                texture_atlas,
                 ..Default::default()
             },
             Piece {

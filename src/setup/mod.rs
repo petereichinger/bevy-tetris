@@ -16,46 +16,47 @@ impl Plugin for SetupPlugin {
 
     fn build(&self, app: &mut App) {
         app.add_state::<GameState>()
-            .add_systems(OnEnter(GameState::Setup), load_sprites)
+            .add_systems(OnEnter(GameState::Setup), (load_sprites, setup_camera))
             .add_systems(
                 Update,
                 (wait_for_loading).run_if(in_state(GameState::Setup)),
-            );
+            )
+            .add_systems(OnExit(GameState::Setup), finished_loading);
     }
 }
 
 #[derive(Resource)]
-pub struct CellTextures {
-    pub texture_atlas: Handle<TextureAtlas>,
-}
+pub struct CellTextures(pub Handle<TextureAtlas>);
 
+fn setup_camera(mut commands: Commands) {
+    commands.spawn(Camera2dBundle::default());
+}
 fn load_sprites(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
     let sprite_handle = asset_server.load("sprites/cells.png");
-    let texture_atlas = TextureAtlas::from_grid(
-        sprite_handle,
-        Vec2::new(53.0, 55.0),
-        4,
-        4,
-        Some(Vec2::new(14.0, 12.0)),
-        None,
-    );
+    let texture_atlas =
+        TextureAtlas::from_grid(sprite_handle, Vec2::new(32.0, 32.0), 4, 4, None, None);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
-    commands.insert_resource(CellTextures {
-        texture_atlas: texture_atlas_handle,
-    });
+    commands.insert_resource(CellTextures(texture_atlas_handle));
 }
 
-fn wait_for_loading(mut texture_atlas_events: EventReader<AssetEvent<TextureAtlas>>) {
+fn wait_for_loading(
+    mut commands: Commands,
+    mut texture_atlas_events: EventReader<AssetEvent<TextureAtlas>>,
+    cell_textures: Res<CellTextures>,
+) {
+    let atlas_id = cell_textures.0.id();
     for &event in texture_atlas_events.iter() {
-        match event {
-            AssetEvent::Added { id } => println!("added"),
-            AssetEvent::Modified { id } => println!("modified"),
-            AssetEvent::Removed { id } => println!("removed"),
-            AssetEvent::LoadedWithDependencies { id } => println!("load with deps"),
+        if let AssetEvent::Added { id } = event {
+            if id == atlas_id {
+                commands.insert_resource(NextState(Some(GameState::InGame)));
+            }
         }
     }
+}
+fn finished_loading() {
+    info!("finished loading");
 }

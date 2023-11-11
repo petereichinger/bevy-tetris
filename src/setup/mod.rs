@@ -25,6 +25,9 @@ impl Plugin for SetupPlugin {
 }
 
 #[derive(Resource)]
+pub struct CellBackground(pub Handle<Image>);
+
+#[derive(Resource)]
 pub struct CellTextures {
     pub atlas: Handle<TextureAtlas>,
     pub size: f32,
@@ -40,6 +43,8 @@ fn load_sprites(
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
+    let background_handle = asset_server.load("sprites/background_cell.png");
+    commands.insert_resource(CellBackground(background_handle));
     let sprite_handle = asset_server.load("sprites/cells.png");
 
     let tile_size = Vec2::new(32.0, 32.0);

@@ -10,7 +10,7 @@ impl Plugin for RenderPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(PlayfieldDimensions::default())
             .register_type::<BackgroundCell>()
-            .add_systems(OnEnter(GameState::InGame), (spawn_grid_background))
+            .add_systems(OnEnter(GameState::InGame), spawn_grid_background)
             .add_systems(
                 PreUpdate,
                 update_playfield_dimensions.run_if(in_state(GameState::InGame)),
@@ -43,7 +43,6 @@ fn spawn_grid_background(
     let texture = &background_sprite.0;
     let size = &playfield_size.0;
 
-    let fsize = size.as_vec2();
     commands
         .spawn((BackgroundGrid, SpatialBundle::default()))
         .with_children(|cb| {
@@ -69,9 +68,7 @@ fn update_playfield_dimensions(
 ) {
     let size = &playfield.0;
     let window = &windows.get_single_mut();
-    if let Err(e) = window {
-        return;
-    } else if let Ok(window) = window {
+    if let Ok(window) = window {
         let resolution = &window.resolution;
 
         let resolution = Vec2::new(resolution.width(), resolution.height());
@@ -95,7 +92,6 @@ fn update_playfield_dimensions(
 }
 
 fn update_piece_sprite(
-    mut commands: Commands,
     mut query: Query<(&Piece, &mut Transform)>,
     cell_textures: Res<CellTextures>,
     playfield_dimensions: Res<PlayfieldDimensions>,

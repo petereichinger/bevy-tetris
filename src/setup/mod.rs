@@ -59,10 +59,8 @@ fn load_sprites(
 }
 
 fn wait_for_loading(
-    mut sprite_size: Local<Vec2>,
     mut commands: Commands,
     mut texture_atlas_events: EventReader<AssetEvent<TextureAtlas>>,
-    mut image_events: EventReader<AssetEvent<Image>>,
     cell_textures: Res<CellTextures>,
 ) {
     let atlas_id = cell_textures.atlas.id();

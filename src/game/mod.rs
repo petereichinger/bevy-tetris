@@ -121,9 +121,5 @@ fn move_piece(
 fn check_move(playfield: &Playfield, new_pos: IVec2) -> bool {
     let cell = playfield.get(new_pos);
 
-    if let Some(Cell::Empty) = cell {
-        true
-    } else {
-        false
-    }
+    matches!(cell, Some(Cell::Empty))
 }

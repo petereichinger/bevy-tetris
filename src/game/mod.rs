@@ -21,10 +21,7 @@ impl Plugin for GamePlugin {
             .insert_resource(Playfield::new([10, 24].into()))
             .register_type::<Piece>()
             .add_systems(OnEnter(GameState::InGame), spawn_piece)
-            .add_systems(
-                Update,
-                (drop_current_piece).run_if(in_state(GameState::InGame)),
-            )
+            .add_systems(Update, (move_piece).run_if(in_state(GameState::InGame)))
             .add_plugins(RenderPlugin);
     }
 }
@@ -67,7 +64,7 @@ struct Piece {
     piece_type: PieceType,
 }
 
-fn drop_current_piece(
+fn move_piece(
     mut commands: Commands,
     time: Res<Time>,
     mut timer: ResMut<StepTimer>,

@@ -158,8 +158,7 @@ fn read_cell_events(
                         ..Default::default()
                     },
                 ));
-            }
-            EventType::Removed => todo!(),
+            } // EventType::Removed => todo!(),
         }
     }
 }

@@ -9,5 +9,5 @@ pub struct CellEvent {
 #[derive(Debug)]
 pub enum EventType {
     Added,
-    Removed,
+    // Removed,
 }

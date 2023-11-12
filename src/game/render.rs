@@ -1,10 +1,10 @@
-use bevy::{prelude::*, utils::HashMap};
+use bevy::prelude::*;
 
 use crate::setup::{CellBackground, CellTextures, GameState};
 
 use super::{
-    cell_events::{self, CellEvent, EventType},
-    Piece, PieceType, Playfield,
+    cell_events::{CellEvent, EventType},
+    Piece, Playfield,
 };
 
 pub(super) struct RenderPlugin;
@@ -112,7 +112,6 @@ fn set_playfield_dimensions(
 
 fn update_piece_sprite(
     mut query: Query<(&Piece, &mut Transform)>,
-    cell_textures: Res<CellTextures>,
     playfield_dimensions: Res<PlayfieldDimensions>,
 ) {
     let piece = query.get_single_mut().ok();

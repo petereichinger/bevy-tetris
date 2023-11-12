@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::setup::{CellBackground, CellTextures, GameState};
 
-use super::{Piece, PlayfieldSize};
+use super::{Piece, Playfield};
 
 pub(super) struct RenderPlugin;
 
@@ -37,18 +37,18 @@ struct PlayfieldDimensions {
 
 fn spawn_grid_background(
     mut commands: Commands,
-    playfield_size: Res<PlayfieldSize>,
+    playfield_size: Res<Playfield>,
     background_sprite: Res<CellBackground>,
 ) {
     let texture = &background_sprite.0;
-    let size = &playfield_size.0;
+    let Playfield { size, .. } = &*playfield_size;
 
     commands
         .spawn((BackgroundGrid, SpatialBundle::default()))
         .with_children(|cb| {
             for y in 0..size.y {
                 for x in 0..size.x {
-                    let position = IVec2::new(x, y).as_vec2();
+                    let position = UVec2::new(x, y).as_vec2();
                     cb.spawn((
                         BackgroundCell(position),
                         SpriteBundle {
@@ -61,12 +61,12 @@ fn spawn_grid_background(
         });
 }
 fn update_playfield_dimensions(
-    playfield: Res<PlayfieldSize>,
+    playfield: Res<Playfield>,
     mut windows: Query<&Window>,
     mut playfield_dimensions: ResMut<PlayfieldDimensions>,
     cell_textures: Res<CellTextures>,
 ) {
-    let size = &playfield.0;
+    let Playfield { size, .. } = &*playfield;
     let window = &windows.get_single_mut();
     if let Ok(window) = window {
         let resolution = &window.resolution;

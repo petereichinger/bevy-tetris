@@ -1,17 +1,21 @@
+mod playfield;
 mod render;
 
 use bevy::{ecs::query::QuerySingleError, prelude::*};
 
 use crate::setup::{CellTextures, GameState};
 
-use self::render::RenderPlugin;
+use self::{
+    playfield::{Cell, Playfield},
+    render::RenderPlugin,
+};
 
 pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(StepTimer(Timer::from_seconds(1.0, TimerMode::Repeating)))
-            .insert_resource(PlayfieldSize(IVec2::new(10, 24)))
+            .insert_resource(Playfield::new([10, 24].into()))
             .register_type::<Piece>()
             .add_systems(OnEnter(GameState::InGame), spawn_piece_if_necessary)
             .add_systems(
@@ -21,9 +25,6 @@ impl Plugin for GamePlugin {
             .add_plugins(RenderPlugin);
     }
 }
-
-#[derive(Resource)]
-struct PlayfieldSize(IVec2);
 
 fn spawn_piece_if_necessary(
     mut commands: Commands,
@@ -54,8 +55,8 @@ fn spawn_piece_if_necessary(
 #[derive(Resource)]
 struct StepTimer(Timer);
 
-#[derive(Reflect)]
-enum PieceType {
+#[derive(Reflect, PartialEq, Eq, Debug, Copy, Clone)]
+pub enum PieceType {
     J,
     // L,
     // S,
@@ -69,10 +70,38 @@ struct Piece {
     piece_type: PieceType,
 }
 
-fn drop_current_piece(time: Res<Time>, mut timer: ResMut<StepTimer>, mut query: Query<&mut Piece>) {
+fn drop_current_piece(
+    time: Res<Time>,
+    mut timer: ResMut<StepTimer>,
+    mut query: Query<&mut Piece>,
+    mut playfield: ResMut<Playfield>,
+) {
     let mut piece = query.single_mut();
     if timer.0.tick(time.delta()).just_finished() {
-        piece.position.y -= 1;
+        let new_pos = piece.position - IVec2::Y;
+
+        let move_possible = check_move(&mut playfield, new_pos);
+
+        if move_possible {
+            piece.position = new_pos;
+        } else {
+            let cell = playfield.get_mut(new_pos);
+
+            if let Some(cell) = cell {
+                *cell = Cell::Filled(PieceType::J);
+            }
+        }
+        // piece.position.y -= 1;
         // info!("{}", piece.position);
+    }
+}
+
+fn check_move(playfield: &mut Playfield, new_pos: IVec2) -> bool {
+    let cell = playfield.get(new_pos);
+
+    if let Some(Cell::Empty) = cell {
+        true
+    } else {
+        false
     }
 }

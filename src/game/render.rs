@@ -1,8 +1,11 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, utils::HashMap};
 
 use crate::setup::{CellBackground, CellTextures, GameState};
 
-use super::{Piece, Playfield};
+use super::{
+    cell_events::{self, CellEvent, EventType},
+    Piece, PieceType, Playfield,
+};
 
 pub(super) struct RenderPlugin;
 
@@ -13,11 +16,16 @@ impl Plugin for RenderPlugin {
             .add_systems(OnEnter(GameState::InGame), spawn_grid_background)
             .add_systems(
                 PreUpdate,
-                update_playfield_dimensions.run_if(in_state(GameState::InGame)),
+                set_playfield_dimensions.run_if(in_state(GameState::InGame)),
             )
             .add_systems(
                 PostUpdate,
-                (update_piece_sprite, update_background_grid_sprites)
+                (
+                    update_piece_sprite,
+                    update_background_grid_sprites,
+                    read_cell_events,
+                    update_cell_sprites,
+                )
                     .run_if(in_state(GameState::InGame)),
             );
     }
@@ -34,6 +42,17 @@ struct PlayfieldDimensions {
     grid_size: Vec2,
     scale: Vec3,
 }
+
+impl PlayfieldDimensions {
+    pub fn get_transform(&self, position: Vec2, depth: f32) -> Transform {
+        let position = self.cell_size * position - 0.5 * self.grid_size;
+        let position = position.extend(depth);
+        Transform::from_translation(position).with_scale(self.scale)
+    }
+}
+
+#[derive(Component)]
+struct FilledCell(IVec2);
 
 fn spawn_grid_background(
     mut commands: Commands,
@@ -60,7 +79,7 @@ fn spawn_grid_background(
             }
         });
 }
-fn update_playfield_dimensions(
+fn set_playfield_dimensions(
     playfield: Res<Playfield>,
     mut windows: Query<&Window>,
     mut playfield_dimensions: ResMut<PlayfieldDimensions>,
@@ -96,34 +115,61 @@ fn update_piece_sprite(
     cell_textures: Res<CellTextures>,
     playfield_dimensions: Res<PlayfieldDimensions>,
 ) {
-    let (piece, mut transform) = query.single_mut();
+    let piece = query.get_single_mut().ok();
 
-    let (cell_size, grid_size) = (
-        playfield_dimensions.cell_size,
-        playfield_dimensions.grid_size,
-    );
-
-    let position = cell_size * piece.position.as_vec2() - 0.5 * grid_size;
-    let position = position.extend(0.0);
-
-    let scale = cell_size / cell_textures.size;
-    *transform = transform
-        .with_translation(position)
-        .with_scale(Vec2::splat(scale).extend(1.0));
+    if let Some((piece, mut transform)) = piece {
+        *transform = playfield_dimensions.get_transform(piece.position.as_vec2(), 1.0);
+    }
 }
 
 fn update_background_grid_sprites(
     playfield_dimensions: Res<PlayfieldDimensions>,
     mut background_grid_query: Query<(&BackgroundCell, &mut Transform)>,
 ) {
-    let PlayfieldDimensions {
-        cell_size,
-        grid_size,
-        scale,
-    } = &*playfield_dimensions;
     for (cell, mut transform) in background_grid_query.iter_mut() {
-        let position = *cell_size * cell.0 - 0.5 * *grid_size;
-        let position = position.extend(-1.0);
-        *transform = transform.with_translation(position).with_scale(*scale);
+        *transform = playfield_dimensions.get_transform(cell.0, 0.0);
+    }
+}
+
+fn read_cell_events(
+    mut commands: Commands,
+    mut cell_event_reader: EventReader<CellEvent>,
+    cell_textures: Res<CellTextures>,
+    playfield_dimensions: Res<PlayfieldDimensions>,
+) {
+    let texture_atlas = cell_textures.atlas.clone();
+    let sprite = TextureAtlasSprite {
+        color: Color::ORANGE_RED,
+        index: 1,
+        ..default()
+    };
+    for CellEvent {
+        position,
+        event_type,
+    } in cell_event_reader.read()
+    {
+        match event_type {
+            EventType::Added => {
+                commands.spawn((
+                    FilledCell(*position),
+                    SpriteSheetBundle {
+                        sprite: sprite.clone(),
+                        texture_atlas: texture_atlas.clone(),
+                        transform: playfield_dimensions.get_transform(position.as_vec2(), 1.0),
+                        ..Default::default()
+                    },
+                ));
+            }
+            EventType::Removed => todo!(),
+        }
+    }
+}
+
+fn update_cell_sprites(
+    playfield_dimensions: Res<PlayfieldDimensions>,
+    mut filled_cells: Query<(&FilledCell, &mut Transform)>,
+) {
+    for (filled_cell, mut transform) in filled_cells.iter_mut() {
+        *transform = playfield_dimensions.get_transform(filled_cell.0.as_vec2(), 1.0);
     }
 }

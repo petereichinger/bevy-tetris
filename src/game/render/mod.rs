@@ -5,7 +5,7 @@ mod playfield_render_size;
 
 use bevy::prelude::*;
 
-use crate::setup::{CellTextures, GameState};
+use crate::setup::GameState;
 
 use self::{
     background::{spawn_grid_background, update_background_grid_sprites},
@@ -13,8 +13,6 @@ use self::{
     piece::update_piece_sprite,
     playfield_render_size::{set_playfield_dimensions, PlayfieldRenderSize},
 };
-
-use super::{cell_events::CellEvent, piece_types::get_sprite_for_piece};
 
 pub(super) struct RenderPlugin;
 

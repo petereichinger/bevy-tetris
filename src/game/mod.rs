@@ -61,6 +61,12 @@ fn move_piece(
 ) {
     let (entity, mut piece) = query.single_mut();
 
+    if keys.just_pressed(KeyCode::Space) {
+        while check_move(&playfield, &piece, piece.position + IVec2::NEG_Y) {
+            piece.position += IVec2::NEG_Y;
+        }
+    }
+
     let direction = {
         if keys.just_pressed(KeyCode::Right) {
             Some(IVec2::X)

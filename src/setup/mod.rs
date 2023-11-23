@@ -45,10 +45,10 @@ fn load_sprites(
 ) {
     let background_handle = asset_server.load("sprites/background_cell.png");
     commands.insert_resource(CellBackground(background_handle));
-    let sprite_handle = asset_server.load("sprites/cells.png");
+    let texture = asset_server.load("sprites/cells.png");
 
     let tile_size = Vec2::new(32.0, 32.0);
-    let texture_atlas = TextureAtlas::from_grid(sprite_handle, tile_size, 4, 4, None, None);
+    let texture_atlas = TextureAtlas::from_grid(texture, tile_size, 4, 4, None, None);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
 
     commands.insert_resource(CellTextures {

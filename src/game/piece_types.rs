@@ -55,7 +55,7 @@ const Z_CELLS: [IVec2; 4] = [
     IVec2::new(-1, 1),
 ];
 
-pub fn iter_cells(position: IVec2, piece_type: PieceType) -> impl Iterator<Item = IVec2> {
+pub fn iter_cells(piece_type: PieceType) -> impl Iterator<Item = &'static IVec2> {
     let cells: &[IVec2] = match piece_type {
         PieceType::O => &O_CELLS,
         PieceType::J => &J_CELLS,
@@ -65,7 +65,11 @@ pub fn iter_cells(position: IVec2, piece_type: PieceType) -> impl Iterator<Item 
         PieceType::Z => &Z_CELLS,
     };
 
-    cells.iter().map(move |c| position + *c)
+    cells.iter()
+}
+
+pub fn iter_cells_at(position: IVec2, piece_type: PieceType) -> impl Iterator<Item = IVec2> {
+    iter_cells(piece_type).map(move |c| position + *c)
 }
 
 pub fn get_random_piece_type(mut rng: ResMut<GlobalEntropy<ChaCha8Rng>>) -> PieceType {
@@ -77,5 +81,22 @@ pub fn get_random_piece_type(mut rng: ResMut<GlobalEntropy<ChaCha8Rng>>) -> Piec
         4 => PieceType::T,
         5 => PieceType::Z,
         _ => panic!("NOT POSSIBLE"),
+    }
+}
+
+pub fn get_sprite_for_piece(piece_type: PieceType) -> TextureAtlasSprite {
+    let (color, index) = match piece_type {
+        PieceType::O => (Color::YELLOW_GREEN, 1),
+        PieceType::J => (Color::BLUE, 2),
+        PieceType::L => (Color::ORANGE_RED, 3),
+        PieceType::S => (Color::SEA_GREEN, 4),
+        PieceType::T => (Color::PURPLE, 5),
+        PieceType::Z => (Color::RED, 6),
+    };
+
+    TextureAtlasSprite {
+        color,
+        index,
+        ..default()
     }
 }

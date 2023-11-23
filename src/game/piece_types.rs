@@ -86,12 +86,12 @@ pub fn get_random_piece_type(mut rng: ResMut<GlobalEntropy<ChaCha8Rng>>) -> Piec
 
 pub fn get_sprite_for_piece(piece_type: PieceType) -> TextureAtlasSprite {
     let (color, index) = match piece_type {
-        PieceType::O => (Color::YELLOW_GREEN, 1),
-        PieceType::J => (Color::BLUE, 2),
-        PieceType::L => (Color::ORANGE_RED, 3),
-        PieceType::S => (Color::SEA_GREEN, 4),
-        PieceType::T => (Color::PURPLE, 5),
-        PieceType::Z => (Color::RED, 6),
+        PieceType::O => (BRIGHT_ORANGE, 1),
+        PieceType::J => (PETROL, 2),
+        PieceType::L => (LIME_GREEN, 3),
+        PieceType::S => (CRISP_LAVENDER, 4),
+        PieceType::T => (SILVER_GREY, 5),
+        PieceType::Z => (DEEP_GREEN, 6),
     };
 
     TextureAtlasSprite {
@@ -100,3 +100,10 @@ pub fn get_sprite_for_piece(piece_type: PieceType) -> TextureAtlasSprite {
         ..default()
     }
 }
+
+const PETROL: Color = Color::rgb(0.009, 0.2, 0.33);
+const BRIGHT_ORANGE: Color = Color::rgb(1.00, 0.55, 0.00);
+const LIME_GREEN: Color = Color::rgb(1.00, 0.55, 0.00);
+const SILVER_GREY: Color = Color::rgb(0.75, 0.75, 0.75);
+const DEEP_GREEN: Color = Color::rgb(0.00, 0.39, 0.32);
+const CRISP_LAVENDER: Color = Color::rgb(0.70, 0.53, 0.80);

@@ -7,11 +7,11 @@ use bevy::prelude::*;
 use bevy_prng::ChaCha8Rng;
 use bevy_rand::prelude::*;
 
-use crate::setup::{CellTextures, GameState};
+use crate::setup::GameState;
 
 use self::{
     cell_events::{CellEvent, EventType},
-    piece_types::{get_random_piece_type, get_sprite_for_piece, iter_cells_at, PieceType},
+    piece_types::{get_random_piece_type, iter_cells_at, PieceType},
     playfield::{Cell, Playfield},
     render::RenderPlugin,
 };
@@ -55,7 +55,6 @@ fn move_piece(
     mut timer: ResMut<StepTimer>,
     mut query: Query<(Entity, &mut Piece)>,
     mut playfield: ResMut<Playfield>,
-    cell_textures: Res<CellTextures>,
     cell_events_writer: EventWriter<CellEvent>,
     rng: ResMut<GlobalEntropy<ChaCha8Rng>>,
     keys: Res<Input<KeyCode>>,

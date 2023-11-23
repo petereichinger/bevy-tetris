@@ -10,7 +10,7 @@ use bevy_rand::prelude::*;
 use crate::setup::GameState;
 
 use self::{
-    cell_events::{CellEvent, EventType},
+    cell_events::CellEvent,
     piece_types::{get_random_piece_type, iter_cells_at, PieceType},
     playfield::{Cell, Playfield},
     render::RenderPlugin,
@@ -66,6 +66,8 @@ fn move_piece(
             Some(IVec2::X)
         } else if keys.just_pressed(KeyCode::Left) {
             Some(IVec2::NEG_X)
+        } else if keys.just_pressed(KeyCode::Down) {
+            Some(IVec2::NEG_Y)
         } else {
             None
         }
@@ -107,16 +109,19 @@ fn check_move(playfield: &Playfield, piece: &Piece, new_pos: IVec2) -> bool {
 
 fn set_cells(
     playfield: &mut Playfield,
-    piece: &Piece,
+    Piece {
+        position,
+        piece_type,
+    }: &Piece,
     mut cell_events_writer: EventWriter<CellEvent>,
 ) {
-    iter_cells_at(piece.position, piece.piece_type).for_each(|p| {
+    iter_cells_at(*position, *piece_type).for_each(|p| {
         let cell = playfield.get_mut(p);
         if let Some(cell) = cell {
-            *cell = Cell::Filled(piece.piece_type);
-            cell_events_writer.send(CellEvent {
+            *cell = Cell::Filled(*piece_type);
+            cell_events_writer.send(CellEvent::Added {
                 position: p,
-                event_type: EventType::Added,
+                piece_type: *piece_type,
             });
         }
     });

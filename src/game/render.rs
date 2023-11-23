@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::setup::{CellBackground, CellTextures, GameState};
 
 use super::{
-    cell_events::{CellEvent, EventType},
+    cell_events::CellEvent,
     piece_types::{get_sprite_for_piece, iter_cells},
     Piece, Playfield,
 };
@@ -180,18 +180,14 @@ fn read_cell_events(
     playfield_dimensions: Res<PlayfieldDimensions>,
 ) {
     let texture_atlas = cell_textures.atlas.clone();
-    let sprite = TextureAtlasSprite {
-        color: Color::ORANGE_RED,
-        index: 1,
-        ..default()
-    };
-    for CellEvent {
-        position,
-        event_type,
-    } in cell_event_reader.read()
-    {
-        match event_type {
-            EventType::Added => {
+
+    for event in cell_event_reader.read() {
+        match event {
+            CellEvent::Added {
+                position,
+                piece_type,
+            } => {
+                let sprite = get_sprite_for_piece(*piece_type);
                 commands.spawn((
                     FilledCell(*position),
                     SpriteSheetBundle {
@@ -201,7 +197,7 @@ fn read_cell_events(
                         ..Default::default()
                     },
                 ));
-            } // EventType::Removed => todo!(),
+            } // EventType::Removed => todo!(),,
         }
     }
 }

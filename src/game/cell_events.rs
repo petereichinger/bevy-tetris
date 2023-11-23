@@ -1,13 +1,11 @@
 use bevy::prelude::*;
 
-#[derive(Debug, Event)]
-pub struct CellEvent {
-    pub position: IVec2,
-    pub event_type: EventType,
-}
+use super::piece_types::PieceType;
 
-#[derive(Debug)]
-pub enum EventType {
-    Added,
-    // Removed,
+#[derive(Debug, Event)]
+pub enum CellEvent {
+    Added {
+        position: IVec2,
+        piece_type: PieceType,
+    },
 }

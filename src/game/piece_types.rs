@@ -3,6 +3,8 @@ use bevy_prng::ChaCha8Rng;
 use bevy_rand::prelude::*;
 use rand_core::RngCore;
 
+use super::{Piece, Rotation};
+
 #[derive(Reflect, PartialEq, Eq, Debug, Copy, Clone)]
 pub enum PieceType {
     O,
@@ -55,7 +57,7 @@ const Z_CELLS: [IVec2; 4] = [
     IVec2::new(-1, 1),
 ];
 
-pub fn iter_cells(piece_type: PieceType) -> impl Iterator<Item = &'static IVec2> {
+pub fn iter_cells(piece_type: PieceType, rotation: Rotation) -> impl Iterator<Item = IVec2> {
     let cells: &[IVec2] = match piece_type {
         PieceType::O => &O_CELLS,
         PieceType::J => &J_CELLS,
@@ -65,11 +67,22 @@ pub fn iter_cells(piece_type: PieceType) -> impl Iterator<Item = &'static IVec2>
         PieceType::Z => &Z_CELLS,
     };
 
-    cells.iter()
+    cells.iter().map(move |c| match rotation {
+        Rotation::R0 => *c,
+        Rotation::R90 => IVec2 { x: -c.y, y: c.x },
+        Rotation::R180 => IVec2 { x: -c.x, y: -c.y },
+        Rotation::R270 => IVec2 { x: c.y, y: -c.x },
+    })
 }
 
-pub fn iter_cells_at(position: IVec2, piece_type: PieceType) -> impl Iterator<Item = IVec2> {
-    iter_cells(piece_type).map(move |c| position + *c)
+pub fn iter_piece_cells(
+    Piece {
+        position,
+        rotation,
+        piece_type,
+    }: &Piece,
+) -> impl Iterator<Item = IVec2> + '_ {
+    iter_cells(*piece_type, *rotation).map(move |c| *position + c)
 }
 
 pub fn get_random_piece_type(mut rng: ResMut<GlobalEntropy<ChaCha8Rng>>) -> PieceType {
@@ -83,6 +96,15 @@ pub fn get_random_piece_type(mut rng: ResMut<GlobalEntropy<ChaCha8Rng>>) -> Piec
         _ => panic!("NOT POSSIBLE"),
     }
 }
+
+pub const EMPTY_SPRITE: TextureAtlasSprite = TextureAtlasSprite {
+    color: Color::DARK_GRAY,
+    index: 0,
+    flip_x: false,
+    flip_y: false,
+    custom_size: None,
+    anchor: bevy::sprite::Anchor::Center,
+};
 
 pub fn get_sprite_for_piece(piece_type: PieceType) -> TextureAtlasSprite {
     let (color, index) = match piece_type {

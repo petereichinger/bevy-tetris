@@ -1,6 +1,11 @@
 use bevy::prelude::*;
 
-use crate::{game::playfield::Playfield, setup::CellTextures};
+use crate::{
+    game::{playfield::Playfield, Piece},
+    setup::CellTextures,
+};
+
+use super::piece;
 
 #[derive(Debug, Resource, Default)]
 pub(super) struct PlayfieldRenderSize {
@@ -14,6 +19,24 @@ impl PlayfieldRenderSize {
         let position = self.cell_size * position - 0.5 * self.grid_size;
         let position = position.extend(depth);
         Transform::from_translation(position).with_scale(self.scale)
+    }
+
+    pub fn get_piece_transform(&self, piece: &Piece, depth: f32) -> Transform {
+        let position = self.cell_size * piece.position.as_vec2() - 0.5 * self.grid_size;
+        let position = position.extend(depth);
+
+        use crate::game::Rotation::*;
+        let angle: f32 = match piece.rotation {
+            R0 => 0.0,
+            R90 => 90.0,
+            R180 => 180.0,
+            R270 => 270.0,
+        };
+
+        let rotation = Quat::from_axis_angle(Vec3::Z, angle.to_radians());
+        Transform::from_translation(position)
+            .with_rotation(rotation)
+            .with_scale(self.scale)
     }
 }
 

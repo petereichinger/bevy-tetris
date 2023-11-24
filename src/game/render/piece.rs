@@ -23,6 +23,7 @@ pub(super) fn update_piece_sprite(
 ) {
     if let Ok(&Piece {
         piece_type,
+        rotation,
         position,
     }) = new_piece_query.get_single()
     {
@@ -42,7 +43,7 @@ pub(super) fn update_piece_sprite(
                 },
             ))
             .with_children(|cb| {
-                iter_cells(piece_type).for_each(|pos| {
+                iter_cells(piece_type, rotation).for_each(|pos| {
                     let texture_atlas = cell_textures.atlas.clone();
                     cb.spawn(SpriteSheetBundle {
                         sprite: sprite.clone(),
@@ -58,6 +59,6 @@ pub(super) fn update_piece_sprite(
         let piece = piece_query.single();
         let (_, mut transform, _) = render_piece_query.single_mut();
 
-        *transform = playfield_dimensions.get_transform(piece.position.as_vec2(), 1.0);
+        *transform = playfield_dimensions.get_piece_transform(piece, 1.0);
     }
 }

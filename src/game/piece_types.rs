@@ -125,7 +125,7 @@ pub fn get_sprite_for_piece(piece_type: PieceType) -> TextureAtlasSprite {
 
 const PETROL: Color = Color::rgb(0.009, 0.2, 0.33);
 const BRIGHT_ORANGE: Color = Color::rgb(1.00, 0.55, 0.00);
-const LIME_GREEN: Color = Color::rgb(1.00, 0.55, 0.00);
+const LIME_GREEN: Color = Color::rgb(0.80, 1.00, 0.00);
 const SILVER_GREY: Color = Color::rgb(0.75, 0.75, 0.75);
 const DEEP_GREEN: Color = Color::rgb(0.00, 0.39, 0.32);
 const CRISP_LAVENDER: Color = Color::rgb(0.70, 0.53, 0.80);

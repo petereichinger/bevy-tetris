@@ -23,15 +23,7 @@ impl PlayfieldRenderSize {
         let position = self.cell_size * piece.position.as_vec2() - 0.5 * self.grid_size;
         let position = position.extend(depth);
 
-        use crate::game::Rotation::*;
-        let angle: f32 = match piece.rotation {
-            R0 => 0.0,
-            R90 => 90.0,
-            R180 => 180.0,
-            R270 => 270.0,
-        };
-
-        let rotation = Quat::from_axis_angle(Vec3::Z, angle.to_radians());
+        let rotation = Quat::from_axis_angle(Vec3::Z, piece.rotation.into());
         Transform::from_translation(position)
             .with_rotation(rotation)
             .with_scale(self.scale)

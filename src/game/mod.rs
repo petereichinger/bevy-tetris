@@ -31,7 +31,7 @@ impl Plugin for GamePlugin {
 fn spawn_piece(mut commands: Commands, rng: ResMut<GlobalEntropy<ChaCha8Rng>>) {
     let piece_type = get_random_piece_type(rng);
 
-    commands.spawn((Piece::new(piece_type)));
+    commands.spawn(Piece::new(piece_type));
 }
 
 #[derive(Resource)]

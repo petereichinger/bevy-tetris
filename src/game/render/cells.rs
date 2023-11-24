@@ -5,7 +5,7 @@ use crate::{
         piece_types::{get_sprite_for_piece, EMPTY_SPRITE},
         playfield::{Cell, Playfield},
     },
-    setup::{CellBackground, CellTextures},
+    setup::CellTextures,
 };
 
 use super::PlayfieldRenderSize;

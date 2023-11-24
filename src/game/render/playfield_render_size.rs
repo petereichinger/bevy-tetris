@@ -5,8 +5,6 @@ use crate::{
     setup::CellTextures,
 };
 
-use super::piece;
-
 #[derive(Debug, Resource, Default)]
 pub(super) struct PlayfieldRenderSize {
     pub(super) cell_size: f32,

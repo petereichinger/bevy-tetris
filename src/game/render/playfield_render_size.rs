@@ -1,10 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    game::{
-        playfield::{Playfield, PlayfieldSize},
-        Piece,
-    },
+    game::{playfield::PlayfieldSize, Piece},
     setup::CellTextures,
 };
 

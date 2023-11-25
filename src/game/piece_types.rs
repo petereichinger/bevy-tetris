@@ -94,19 +94,6 @@ pub fn iter_piece_cells(
     iter_cells(*piece_type, *rotation).map(move |c| *position + c)
 }
 
-pub fn get_random_piece_type(mut rng: ResMut<GlobalEntropy<ChaCha8Rng>>) -> PieceType {
-    match rng.next_u32() % 7 {
-        0 => PieceType::O,
-        1 => PieceType::J,
-        2 => PieceType::L,
-        3 => PieceType::S,
-        4 => PieceType::T,
-        5 => PieceType::Z,
-        6 => PieceType::I,
-        _ => panic!("NOT POSSIBLE"),
-    }
-}
-
 pub const EMPTY_SPRITE: TextureAtlasSprite = TextureAtlasSprite {
     color: Color::DARK_GRAY,
     index: 0,

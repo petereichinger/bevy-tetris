@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{ecs::query::QuerySingleError, prelude::*};
 
 use crate::{
     game::{
@@ -56,9 +56,10 @@ pub(super) fn update_piece_sprite(
     } else {
         // update position of render piece
 
-        let piece = piece_query.single();
-        let (_, mut transform, _) = render_piece_query.single_mut();
+        if let Ok(piece) = piece_query.get_single() {
+            let (_, mut transform, _) = render_piece_query.single_mut();
 
-        *transform = playfield_dimensions.get_piece_transform(piece, 1.0);
+            *transform = playfield_dimensions.get_piece_transform(piece, 1.0);
+        }
     }
 }

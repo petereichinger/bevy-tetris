@@ -3,7 +3,8 @@ use bevy::prelude::*;
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
 pub enum GameState {
     #[default]
-    Setup,
+    Loading,
+    SetupGame,
     InGame,
 }
 
@@ -16,10 +17,10 @@ impl Plugin for SetupPlugin {
 
     fn build(&self, app: &mut App) {
         app.add_state::<GameState>()
-            .add_systems(OnEnter(GameState::Setup), (load_sprites, setup_camera))
+            .add_systems(OnEnter(GameState::Loading), (load_sprites, setup_camera))
             .add_systems(
                 Update,
-                (wait_for_loading).run_if(in_state(GameState::Setup)),
+                (wait_for_loading).run_if(in_state(GameState::Loading)),
             );
     }
 }
@@ -62,7 +63,7 @@ fn wait_for_loading(
     for &event in texture_atlas_events.read() {
         if let AssetEvent::Added { id } = event {
             if id == atlas_id {
-                commands.insert_resource(NextState(Some(GameState::InGame)));
+                commands.insert_resource(NextState(Some(GameState::SetupGame)));
             }
         }
     }

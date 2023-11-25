@@ -1,15 +1,17 @@
+mod piece_order;
 mod piece_types;
 mod playfield;
 mod render;
 
-use bevy::prelude::*;
+use bevy::{ecs::query::QuerySingleError, prelude::*};
 use bevy_prng::ChaCha8Rng;
 use bevy_rand::prelude::*;
 
 use crate::{game::playfield::CheckRotationResult, setup::GameState};
 
 use self::{
-    piece_types::{get_random_piece_type, PieceType},
+    piece_order::{create_piece_order, PieceOrder},
+    piece_types::PieceType,
     playfield::{Playfield, PlayfieldSize},
     render::RenderPlugin,
 };
@@ -22,19 +24,42 @@ impl Plugin for GamePlugin {
             .insert_resource(StepTimer(Timer::from_seconds(0.5, TimerMode::Repeating)))
             .insert_resource(PlayfieldSize([10, 24].into()))
             .register_type::<Piece>()
-            .add_systems(OnEnter(GameState::InGame), (spawn_piece, spawn_playfield))
-            .add_systems(Update, (move_piece).run_if(in_state(GameState::InGame)))
+            .add_systems(
+                OnEnter(GameState::SetupGame),
+                (spawn_playfield, create_piece_order, move_to_ingame),
+            )
+            .add_systems(
+                Update,
+                (spawn_piece, move_piece).run_if(in_state(GameState::InGame)),
+            )
             .add_plugins(RenderPlugin);
     }
 }
 
-fn spawn_playfield(mut commands: Commands) {
-    commands.spawn((Name::new("Playfield"), Playfield::new([10, 24].into())));
+fn spawn_playfield(mut commands: Commands, playfield_size: Res<PlayfieldSize>) {
+    commands.spawn((Name::new("Playfield"), Playfield::new(playfield_size.0)));
 }
 
-fn spawn_piece(mut commands: Commands, rng: ResMut<GlobalEntropy<ChaCha8Rng>>) {
-    let piece_type = get_random_piece_type(rng);
-    commands.spawn((Name::new("Current Piece"), Piece::new(piece_type)));
+fn move_to_ingame(mut commands: Commands) {
+    commands.insert_resource(NextState(Some(GameState::InGame)));
+}
+
+fn spawn_piece(
+    piece: Query<&Piece>,
+    mut commands: Commands,
+    mut piece_order: ResMut<PieceOrder>,
+    rng: ResMut<GlobalEntropy<ChaCha8Rng>>,
+) {
+    if let Err(QuerySingleError::NoEntities(_)) = piece.get_single() {
+        if piece_order.is_finished() {
+            *piece_order = PieceOrder::new(rng);
+        }
+
+        commands.spawn((
+            Name::new("Current Piece"),
+            Piece::new(piece_order.next_piece().expect("Should not be empty")),
+        ));
+    }
 }
 
 #[derive(Resource)]
@@ -83,10 +108,11 @@ fn move_piece(
     mut timer: ResMut<StepTimer>,
     mut query: Query<(Entity, &mut Piece)>,
     mut playfield_query: Query<&mut Playfield>,
-    rng: ResMut<GlobalEntropy<ChaCha8Rng>>,
     keys: Res<Input<KeyCode>>,
 ) {
-    let (entity, mut piece) = query.single_mut();
+    let Ok((entity, mut piece)) = query.get_single_mut() else {
+        return;
+    };
     let mut playfield = playfield_query.single_mut();
     if keys.just_pressed(KeyCode::Up) {
         use Rotation::*;
@@ -157,8 +183,6 @@ fn move_piece(
             piece.position = new_pos;
         } else {
             commands.entity(entity).despawn_recursive();
-            spawn_piece(commands, rng);
-
             playfield.set_cells(&piece);
             playfield.clear_rows();
         }

@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::{
     game::{
         piece_types::{get_sprite_for_piece, EMPTY_SPRITE},
-        playfield::{Cell, Playfield},
+        playfield::{Cell, Playfield, PlayfieldSize},
     },
     setup::CellTextures,
 };
@@ -18,10 +18,10 @@ pub(super) struct CellRender(UVec2);
 
 pub(super) fn spawn_cells(
     mut commands: Commands,
-    playfield_size: Res<Playfield>,
     cell_textures: Res<CellTextures>,
+    playfield_size: Res<PlayfieldSize>,
 ) {
-    let Playfield { size, .. } = &*playfield_size;
+    let PlayfieldSize(size) = *playfield_size;
     let texture_atlas = cell_textures.atlas.clone();
     commands
         .spawn((CellRenderGrid, SpatialBundle::default()))
@@ -42,16 +42,18 @@ pub(super) fn spawn_cells(
 
 pub(super) fn update_cells(
     playfield_dimensions: Res<PlayfieldRenderSize>,
-    mut playfield: ResMut<Playfield>,
+    mut playfield_query: Query<&mut Playfield>,
     mut background_grid_query: Query<(&CellRender, &mut Transform, &mut TextureAtlasSprite)>,
 ) {
-    for (CellRender(pos), mut transform, mut atlas_sprite) in background_grid_query.iter_mut() {
-        if let Some(cell) = playfield.get_mut(pos.as_ivec2()) {
-            *atlas_sprite = match cell {
-                Cell::Empty => EMPTY_SPRITE,
-                Cell::Filled(piece_type) => get_sprite_for_piece(*piece_type),
+    if let Ok(mut playfield) = playfield_query.get_single_mut() {
+        for (CellRender(pos), mut transform, mut atlas_sprite) in background_grid_query.iter_mut() {
+            if let Some(cell) = playfield.get_mut(pos.as_ivec2()) {
+                *atlas_sprite = match cell {
+                    Cell::Empty => EMPTY_SPRITE,
+                    Cell::Filled(piece_type) => get_sprite_for_piece(*piece_type),
+                }
             }
+            *transform = playfield_dimensions.get_transform(pos.as_vec2(), 0.0);
         }
-        *transform = playfield_dimensions.get_transform(pos.as_vec2(), 0.0);
     }
 }

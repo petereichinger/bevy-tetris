@@ -1,10 +1,13 @@
 use bevy::prelude::*;
 
-use super::PieceType;
+use super::{piece_types::iter_piece_cells, Piece, PieceType};
 
 #[derive(Resource)]
+pub struct PlayfieldSize(pub UVec2);
+
+#[derive(Component)]
 pub struct Playfield {
-    pub size: UVec2,
+    size: UVec2,
     cells: Vec<Vec<Cell>>,
 }
 
@@ -68,5 +71,23 @@ impl Playfield {
 
         (0..cleared_rows.len())
             .for_each(|_| self.cells.push(vec![Cell::Empty; self.size.x as usize]));
+    }
+
+    pub fn check_move(&self, piece: &Piece) -> bool {
+        let all_free = iter_piece_cells(piece).all(|p| {
+            let cell = self.get(p);
+            matches!(cell, Some(Cell::Empty))
+        });
+
+        all_free
+    }
+
+    pub fn set_cells(&mut self, piece: &Piece) {
+        iter_piece_cells(piece).for_each(|p| {
+            let cell = self.get_mut(p);
+            if let Some(cell) = cell {
+                *cell = Cell::Filled(piece.piece_type);
+            }
+        });
     }
 }

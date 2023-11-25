@@ -1,7 +1,10 @@
 use bevy::prelude::*;
 
 use crate::{
-    game::{playfield::Playfield, Piece},
+    game::{
+        playfield::{Playfield, PlayfieldSize},
+        Piece,
+    },
     setup::CellTextures,
 };
 
@@ -31,12 +34,12 @@ impl PlayfieldRenderSize {
 }
 
 pub(super) fn set_playfield_dimensions(
-    playfield: Res<Playfield>,
+    playfield_size: Res<PlayfieldSize>,
     mut windows: Query<&Window>,
     mut playfield_dimensions: ResMut<PlayfieldRenderSize>,
     cell_textures: Res<CellTextures>,
 ) {
-    let Playfield { size, .. } = &*playfield;
+    let PlayfieldSize(size) = *playfield_size;
     let window = &windows.get_single_mut();
     if let Ok(window) = window {
         let resolution = &window.resolution;

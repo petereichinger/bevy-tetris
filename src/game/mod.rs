@@ -6,7 +6,7 @@ use bevy::prelude::*;
 use bevy_prng::ChaCha8Rng;
 use bevy_rand::prelude::*;
 
-use crate::setup::GameState;
+use crate::{game::playfield::CheckRotationResult, setup::GameState};
 
 use self::{
     piece_types::{get_random_piece_type, PieceType},
@@ -60,7 +60,7 @@ impl From<Rotation> for f32 {
     }
 }
 
-#[derive(Reflect, Component)]
+#[derive(Reflect, Component, Debug)]
 struct Piece {
     position: IVec2,
     rotation: Rotation,
@@ -91,11 +91,24 @@ fn move_piece(
     if keys.just_pressed(KeyCode::Up) {
         use Rotation::*;
 
-        piece.rotation = match piece.rotation {
+        let new_rotation = match piece.rotation {
             R0 => R90,
             R90 => R180,
             R180 => R270,
             R270 => R0,
+        };
+
+        let check_result = playfield.check_rotation(&Piece {
+            rotation: new_rotation,
+            ..*piece
+        });
+
+        if let CheckRotationResult::ValidWithOffset(offset) = check_result {
+            *piece = Piece {
+                rotation: new_rotation,
+                position: piece.position + offset,
+                ..*piece
+            }
         }
     }
 

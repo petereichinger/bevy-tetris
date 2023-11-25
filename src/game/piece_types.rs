@@ -13,6 +13,7 @@ pub enum PieceType {
     S,
     T,
     Z,
+    I,
 }
 
 const O_CELLS: [IVec2; 4] = [
@@ -57,6 +58,13 @@ const Z_CELLS: [IVec2; 4] = [
     IVec2::new(-1, 1),
 ];
 
+const I_CELLS: [IVec2; 4] = [
+    IVec2::new(0, 0),
+    IVec2::new(1, 0),
+    IVec2::new(-1, 0),
+    IVec2::new(-2, 0),
+];
+
 pub fn iter_cells(piece_type: PieceType, rotation: Rotation) -> impl Iterator<Item = IVec2> {
     let cells: &[IVec2] = match piece_type {
         PieceType::O => &O_CELLS,
@@ -65,6 +73,7 @@ pub fn iter_cells(piece_type: PieceType, rotation: Rotation) -> impl Iterator<It
         PieceType::S => &S_CELLS,
         PieceType::T => &T_CELLS,
         PieceType::Z => &Z_CELLS,
+        PieceType::I => &I_CELLS,
     };
 
     cells.iter().map(move |c| match rotation {
@@ -86,13 +95,14 @@ pub fn iter_piece_cells(
 }
 
 pub fn get_random_piece_type(mut rng: ResMut<GlobalEntropy<ChaCha8Rng>>) -> PieceType {
-    match rng.next_u32() % 6 {
+    match rng.next_u32() % 7 {
         0 => PieceType::O,
         1 => PieceType::J,
         2 => PieceType::L,
         3 => PieceType::S,
         4 => PieceType::T,
         5 => PieceType::Z,
+        6 => PieceType::I,
         _ => panic!("NOT POSSIBLE"),
     }
 }
@@ -114,6 +124,7 @@ pub fn get_sprite_for_piece(piece_type: PieceType) -> TextureAtlasSprite {
         PieceType::S => (CRISP_LAVENDER, 4),
         PieceType::T => (SILVER_GREY, 5),
         PieceType::Z => (DEEP_GREEN, 6),
+        PieceType::I => (Color::ORANGE_RED, 6),
     };
 
     TextureAtlasSprite {

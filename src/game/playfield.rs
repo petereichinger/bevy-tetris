@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use itertools::{Itertools, MinMaxResult};
+
 use super::{piece_types::iter_piece_cells, Piece, PieceType};
 
 #[derive(Resource)]
@@ -16,6 +18,12 @@ pub enum Cell {
     #[default]
     Empty,
     Filled(PieceType),
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum CheckRotationResult {
+    ValidWithOffset(IVec2),
+    Invalid,
 }
 
 impl Playfield {
@@ -80,6 +88,39 @@ impl Playfield {
         });
 
         all_free
+    }
+
+    pub fn check_rotation(&self, piece: &Piece) -> CheckRotationResult {
+        let minmax = iter_piece_cells(piece).map(|p| p.x).minmax();
+        let IVec2 { x: width, y: _ } = self.size.as_ivec2();
+        let (min, max) = match minmax {
+            MinMaxResult::NoElements => panic!("empty piece"),
+            MinMaxResult::OneElement(xpos) => (xpos, xpos),
+            MinMaxResult::MinMax(min, max) => (min, max),
+        };
+
+        let offset = if min < 0 {
+            -min
+        } else if max >= width {
+            -(max + 1 - width)
+        } else {
+            0
+        };
+
+        let offset = IVec2::new(offset, 0);
+        let after_wall_pos = piece.position + offset;
+
+        let valid_pos = self.check_move(&Piece {
+            piece_type: piece.piece_type,
+            position: after_wall_pos,
+            rotation: piece.rotation,
+        });
+
+        if valid_pos {
+            CheckRotationResult::ValidWithOffset(offset)
+        } else {
+            CheckRotationResult::Invalid
+        }
     }
 
     pub fn set_cells(&mut self, piece: &Piece) {

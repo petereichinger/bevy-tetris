@@ -1,4 +1,4 @@
-use bevy::{ecs::query::QuerySingleError, prelude::*};
+use bevy::prelude::*;
 
 use crate::{
     game::{

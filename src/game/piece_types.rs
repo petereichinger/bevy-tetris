@@ -1,7 +1,4 @@
 use bevy::prelude::*;
-use bevy_prng::ChaCha8Rng;
-use bevy_rand::prelude::*;
-use rand_core::RngCore;
 
 use super::{Piece, Rotation};
 
@@ -66,7 +63,7 @@ const I_CELLS: [IVec2; 4] = [
 ];
 
 pub fn iter_cells(piece_type: PieceType, rotation: Rotation) -> impl Iterator<Item = IVec2> {
-    let cells: &[IVec2] = match piece_type {
+    let cells: &[IVec2; 4] = match piece_type {
         PieceType::O => &O_CELLS,
         PieceType::J => &J_CELLS,
         PieceType::L => &L_CELLS,

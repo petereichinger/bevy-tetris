@@ -3,7 +3,7 @@ use bevy_prng::ChaCha8Rng;
 use bevy_rand::resource::GlobalEntropy;
 use rand_core::RngCore;
 
-use super::{piece_types::PieceType, Piece};
+use super::piece_types::PieceType;
 
 #[derive(Debug, Resource)]
 pub(super) struct PieceOrder {

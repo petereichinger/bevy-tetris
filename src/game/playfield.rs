@@ -10,7 +10,22 @@ pub struct PlayfieldSize(pub UVec2);
 #[derive(Component)]
 pub struct Playfield {
     size: UVec2,
-    cells: Vec<Vec<Cell>>,
+    cells: Vec<Row>,
+}
+
+#[derive(Debug, Clone, Default)]
+struct Row {
+    cells: Vec<Cell>,
+    filled: usize,
+}
+
+impl Row {
+    fn new(width: usize) -> Self {
+        Self {
+            cells: vec![Cell::Empty; width],
+            filled: 0,
+        }
+    }
 }
 
 #[derive(Debug, Copy, Clone, Default)]
@@ -28,7 +43,10 @@ pub enum CheckRotationResult {
 
 impl Playfield {
     pub fn new(size: UVec2) -> Self {
-        let row = vec![Cell::Empty; size.x as usize];
+        let row = Row {
+            cells: vec![Cell::Empty; size.x as usize],
+            filled: 0,
+        };
         let cells = (0..size.y).map(|_| row.clone()).collect::<Vec<_>>();
 
         Self { size, cells }
@@ -40,7 +58,7 @@ impl Playfield {
         }
         self.cells
             .get(coordinate.y as usize)
-            .and_then(|row| row.get(coordinate.x as usize))
+            .and_then(|row| row.cells.get(coordinate.x as usize))
     }
 
     pub fn get_mut(&mut self, coordinate: IVec2) -> Option<&mut Cell> {
@@ -49,7 +67,7 @@ impl Playfield {
         }
         self.cells
             .get_mut(coordinate.y as usize)
-            .and_then(|row| row.get_mut(coordinate.x as usize))
+            .and_then(|row| row.cells.get_mut(coordinate.x as usize))
     }
 
     fn valid_coordinate(&self, IVec2 { x, y }: IVec2) -> bool {
@@ -57,28 +75,15 @@ impl Playfield {
     }
 
     pub fn clear_rows(&mut self) {
-        let mut cleared_rows = vec![];
-        for y in 0..self.size.y {
-            let cleared = (0..self.size.x)
-                .map(|x| {
-                    self.get(IVec2 {
-                        x: x as i32,
-                        y: y as i32,
-                    })
-                })
-                .all(|c| matches!(c, Some(Cell::Filled(_))));
-
-            if cleared {
-                cleared_rows.push(y);
-            }
-        }
+        let cleared_rows: Vec<_> = (0..self.size.y)
+            .filter(|y| self.cells[*y as usize].filled == self.size.x as usize)
+            .collect();
 
         cleared_rows.iter().rev().for_each(|row| {
             self.cells.remove(*row as usize);
         });
 
-        (0..cleared_rows.len())
-            .for_each(|_| self.cells.push(vec![Cell::Empty; self.size.x as usize]));
+        (0..cleared_rows.len()).for_each(|_| self.cells.push(Row::new(self.size.x as usize)));
     }
 
     pub fn check_move(&self, piece: &Piece) -> bool {
@@ -128,6 +133,8 @@ impl Playfield {
             let cell = self.get_mut(p);
             if let Some(cell) = cell {
                 *cell = Cell::Filled(piece.piece_type);
+                self.cells[p.y as usize].filled += 1;
+                
             }
         });
     }

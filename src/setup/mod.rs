@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{asset::LoadState, prelude::*};
 
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
 pub enum GameState {
@@ -43,6 +43,7 @@ fn load_sprites(
 ) {
     let texture = asset_server.load("sprites/cells.png");
 
+    info!("{:?}", &asset_server.get_load_state(texture.clone()));
     let tile_size = Vec2::new(32.0, 32.0);
     let texture_atlas = TextureAtlas::from_grid(texture, tile_size, 4, 4, None, None);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
@@ -65,6 +66,8 @@ fn wait_for_loading(
             if id == atlas_id {
                 commands.insert_resource(NextState(Some(GameState::SetupGame)));
             }
+        } else if let AssetEvent::Removed { id: _ } = event {
+            panic!("Could not load sprites")
         }
     }
 }

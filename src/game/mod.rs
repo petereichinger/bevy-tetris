@@ -4,9 +4,13 @@ mod playfield;
 mod render;
 mod rotation;
 
+use std::time::Duration;
+
 use bevy::{ecs::query::QuerySingleError, prelude::*};
 use bevy_prng::ChaCha8Rng;
-use bevy_rand::prelude::*;
+use bevy_rand::{prelude::*, resource};
+
+use bevy_egui::{egui, EguiContexts};
 
 use crate::{game::playfield::CheckRotationResult, setup::GameState};
 
@@ -23,27 +27,39 @@ pub struct GamePlugin;
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(EntropyPlugin::<ChaCha8Rng>::default())
-            .insert_resource(StepTimer(Timer::from_seconds(0.5, TimerMode::Repeating)))
             .insert_resource(PlayfieldSize([10, 24].into()))
             .register_type::<Piece>()
             .add_systems(
                 OnEnter(GameState::SetupGame),
-                (spawn_playfield, create_piece_order, move_to_ingame),
+                (setup_game, create_piece_order),
             )
             .add_systems(
                 Update,
                 (spawn_piece, move_piece).run_if(in_state(GameState::InGame)),
             )
+            .add_systems(OnExit(GameState::InGame), tear_down_game)
+            .add_systems(Update, score_ui.run_if(in_state(GameState::InGame)))
+            .add_systems(
+                Update,
+                game_over_screen.run_if(in_state(GameState::GameOver)),
+            )
             .add_plugins(RenderPlugin);
     }
 }
 
-fn spawn_playfield(mut commands: Commands, playfield_size: Res<PlayfieldSize>) {
+fn setup_game(mut commands: Commands, playfield_size: Res<PlayfieldSize>) {
+    commands.insert_resource(StepTimer(Timer::from_seconds(1.0, TimerMode::Repeating)));
+    commands.insert_resource(Score { score: 0 });
     commands.spawn((Name::new("Playfield"), Playfield::new(playfield_size.0)));
+    commands.insert_resource(NextState(Some(GameState::InGame)));
 }
 
-fn move_to_ingame(mut commands: Commands) {
-    commands.insert_resource(NextState(Some(GameState::InGame)));
+fn tear_down_game(mut commands: Commands, playfield_query: Query<Entity, With<Playfield>>) {
+    commands.remove_resource::<StepTimer>();
+    commands.remove_resource::<Score>();
+    commands
+        .entity(playfield_query.single())
+        .despawn_recursive();
 }
 
 fn spawn_piece(
@@ -51,16 +67,22 @@ fn spawn_piece(
     mut commands: Commands,
     mut piece_order: ResMut<PieceOrder>,
     rng: ResMut<GlobalEntropy<ChaCha8Rng>>,
+    playfield_query: Query<&Playfield>,
 ) {
     if let Err(QuerySingleError::NoEntities(_)) = piece.get_single() {
         if piece_order.is_finished() {
             *piece_order = PieceOrder::new(rng);
         }
+        let piece_type = piece_order.next_piece().expect("Should not be empty");
 
-        commands.spawn((
-            Name::new("Current Piece"),
-            Piece::new(piece_order.next_piece().expect("Should not be empty")),
-        ));
+        let playfield = playfield_query.single();
+
+        let new_piece = Piece::new(piece_type);
+        if playfield.check_move(&new_piece) {
+            commands.spawn((Name::new("Current Piece"), new_piece));
+        } else {
+            commands.insert_resource(NextState(Some(GameState::GameOver)))
+        }
     }
 }
 
@@ -78,7 +100,7 @@ impl Piece {
     fn new(piece_type: PieceType) -> Self {
         Self {
             piece_type,
-            position: IVec2::new(5, 23),
+            position: IVec2::new(5, 22),
             rotation: default(),
         }
     }
@@ -91,6 +113,7 @@ fn move_piece(
     mut query: Query<(Entity, &mut Piece)>,
     mut playfield_query: Query<&mut Playfield>,
     keys: Res<Input<KeyCode>>,
+    mut score: ResMut<Score>,
 ) {
     let Ok((entity, mut piece)) = query.get_single_mut() else {
         return;
@@ -121,12 +144,16 @@ fn move_piece(
     }
 
     if keys.just_pressed(KeyCode::Space) {
+        let old_pos = piece.position;
         while playfield.check_move(&Piece {
             position: piece.position + IVec2::NEG_Y,
             ..*piece
         }) {
             piece.position += IVec2::NEG_Y;
         }
+        let new_pos = piece.position;
+
+        if new_pos != old_pos {}
     }
 
     let direction = {
@@ -166,7 +193,41 @@ fn move_piece(
         } else {
             commands.entity(entity).despawn_recursive();
             playfield.set_cells(&piece);
-            playfield.clear_rows();
+            let cleared_rows = playfield.clear_rows();
+
+            score.score += cleared_rows as u32;
         }
+
+        timer.0.set_duration(Duration::from_secs_f32(score.speed()))
     }
+}
+
+#[derive(Debug, Resource)]
+struct Score {
+    score: u32,
+}
+
+impl Score {
+    fn level(&self) -> u32 {
+        self.score / 5
+    }
+
+    fn speed(&self) -> f32 {
+        1.0 * (0.75f32.powf(self.level() as f32))
+    }
+}
+
+fn score_ui(mut contexts: EguiContexts, score: Res<Score>) {
+    egui::Window::new("Bevy Tetris").show(contexts.ctx_mut(), |ui| {
+        ui.label(format!("Current Score: {}", score.score));
+        ui.label(format!("Current Level: {}", score.level() + 1));
+    });
+}
+
+fn game_over_screen(mut contexts: EguiContexts, mut commands: Commands) {
+    egui::Window::new("GAME OVER").show(contexts.ctx_mut(), |ui| {
+        if ui.button("Restart!").clicked() {
+            commands.insert_resource(NextState(Some(GameState::SetupGame)))
+        }
+    });
 }

@@ -6,6 +6,7 @@ pub enum GameState {
     Loading,
     SetupGame,
     InGame,
+    GameOver,
 }
 
 pub struct SetupPlugin;

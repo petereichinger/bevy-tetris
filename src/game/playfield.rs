@@ -74,7 +74,7 @@ impl Playfield {
         x >= 0 && y >= 0 && x < self.size.x as i32 && y < self.size.y as i32
     }
 
-    pub fn clear_rows(&mut self) {
+    pub fn clear_rows(&mut self) -> usize {
         let cleared_rows: Vec<_> = (0..self.size.y)
             .filter(|y| self.cells[*y as usize].filled == self.size.x as usize)
             .collect();
@@ -84,6 +84,8 @@ impl Playfield {
         });
 
         (0..cleared_rows.len()).for_each(|_| self.cells.push(Row::new(self.size.x as usize)));
+
+        cleared_rows.len()
     }
 
     pub fn check_move(&self, piece: &Piece) -> bool {
@@ -134,7 +136,6 @@ impl Playfield {
             if let Some(cell) = cell {
                 *cell = Cell::Filled(piece.piece_type);
                 self.cells[p.y as usize].filled += 1;
-                
             }
         });
     }

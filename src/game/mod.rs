@@ -2,6 +2,7 @@ mod piece_order;
 mod piece_types;
 mod playfield;
 mod render;
+mod rotation;
 
 use bevy::{ecs::query::QuerySingleError, prelude::*};
 use bevy_prng::ChaCha8Rng;
@@ -14,6 +15,7 @@ use self::{
     piece_types::PieceType,
     playfield::{Playfield, PlayfieldSize},
     render::RenderPlugin,
+    rotation::Rotation,
 };
 
 pub struct GamePlugin;
@@ -65,28 +67,8 @@ fn spawn_piece(
 #[derive(Resource)]
 struct StepTimer(Timer);
 
-#[derive(Debug, Default, Clone, Copy, Reflect)]
-enum Rotation {
-    #[default]
-    R0,
-    R90,
-    R180,
-    R270,
-}
-
-impl From<Rotation> for f32 {
-    fn from(value: Rotation) -> Self {
-        match value {
-            Rotation::R0 => 0.0f32.to_radians(),
-            Rotation::R90 => 90.0f32.to_radians(),
-            Rotation::R180 => 180.0f32.to_radians(),
-            Rotation::R270 => 270.0f32.to_radians(),
-        }
-    }
-}
-
 #[derive(Reflect, Component, Debug)]
-struct Piece {
+pub struct Piece {
     position: IVec2,
     rotation: Rotation,
     piece_type: PieceType,

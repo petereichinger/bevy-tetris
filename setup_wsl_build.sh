@@ -1,3 +1,0 @@
-#! /bin/zsh
-export BEVY_ASSET_ROOT=$(pwd)
-export WSLENV=WT_SESSION:WT_PROFILE_ID:BEVY_ASSET_ROOT/p:
